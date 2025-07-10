@@ -10,7 +10,7 @@ const RedirectByRole = () => {
 	useEffect(() => {
 		if (session) {
 			if (session.role === 1) {
-				navigate("/dashboard/courts");
+				navigate("/dashboard/users");
 			} else {
 				navigate("/dashboard/requests");
 			}

@@ -18,7 +18,7 @@ const Login: React.FC = () => {
 	useEffect(() => {
 		if (session) {
 			if (userRole === 1) {
-				navigate("/dashboard/courts");
+				navigate("/dashboard/users");
 			} else {
 				navigate("/dashboard/requests");
 			}
@@ -50,7 +50,7 @@ const Login: React.FC = () => {
 		<div className="flex justify-center items-center min-h-screen bg-[#b9b9b9] p-4">
 			<div className="bg-white shadow-lg rounded-lg p-8 sm:p-12 w-full max-w-md">
 				<Title level={2} className="text-center">
-					Doc Sign
+					AI Civic Insight
 				</Title>
 				<p className="text-center text-lg">Login into your account</p>
 
@@ -102,9 +102,6 @@ const Login: React.FC = () => {
 						>
 							Login
 						</Button>
-						{/* <div className="mt-2 underline text-blue-600 text-sm">
-							<Link to="/forgot-password">Forgot Password?</Link>
-						</div> */}
 					</Form.Item>
 				</Form>
 			</div>

@@ -30,7 +30,12 @@ const Sidebar: React.FC<SideBarProps> = ({ children }) => {
 	const navigate = useNavigate();
 	const location = useLocation();
 	const [collapsed, setCollapsed] = useState(false);
-	const selectedKey = location.pathname.split("/").pop() as string;
+	// const selectedKey = location.pathname.split("/").pop() as string;
+	const selectedKey = location.pathname.startsWith("/dashboard/users")
+	? "users"
+	: location.pathname.startsWith("/dashboard/requests")
+	? "requests"
+	: "";
 	const user = useAppStore().session;
 
 	const handleLogout = useCallback(async () => {
@@ -52,27 +57,22 @@ const Sidebar: React.FC<SideBarProps> = ({ children }) => {
 					icon: <DiffOutlined />,
 					label: "Requests",
 					onClick: () => navigate(`/dashboard/requests`),
-				},
-				{
-					key: "signatures",
-					icon: <SignatureOutlined />,
-					label: "Signatures",
-					onClick: () => navigate(`/dashboard/signatures`),
 				}
 			);
-		} else {
+		} else {	
 			items.push({
-				key: "courts",
-				icon: <Icon component={courtSvg} />,
-				label: "Courts",
-				onClick: () => navigate(`/dashboard/courts`),
-			});
+				key: "requests",
+				icon: <DiffOutlined />,
+				label: "Requests",
+				onClick: () => navigate(`/dashboard/requests`),
+			})
 			items.push({
 				key: "users",
 				icon: <UserOutlined />,
 				label: "Users",
 				onClick: () => navigate(`/dashboard/users`),
 			});
+			
 		}
 
 		return items;
@@ -113,7 +113,7 @@ const Sidebar: React.FC<SideBarProps> = ({ children }) => {
 									navigate("/");
 								}}
 							>
-								Doc Sign
+								AI Civic Insight
 							</div>
 						)}
 						<Button

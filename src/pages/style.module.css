@@ -1,0 +1,9 @@
+.form {
+    position: relative;
+}
+
+.formButton {
+    margin-left: 10px;
+    position: relative;
+    right: 0;
+}

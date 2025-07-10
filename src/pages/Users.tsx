@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Button, Drawer, Form, Input, Popconfirm, Select, Space } from "antd";
 import CustomTable from "../components/CustomTable";
 import { roles } from "../libs/constants";
-import { courtClient, useAppStore, userClient } from "../store";
+import { useAppStore, userClient } from "../store";
 import MainAreaLayout from "../components/main-layout/main-layout";
 import { useMessage } from "../hooks/message";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -12,16 +12,9 @@ interface User {
 	id: string;
 	name: string;
 	email: string;
-	phoneNumber: string;
-	role: roles.officer | roles.reader;
-	countryCode: string;
-	courtId: {
-		id: string;
-		name: string;
-	};
 }
 
-export const Users: React.FC = () => {
+ const Users: React.FC = () => {
 	const message = useMessage();
 	const getRole = useAppStore((state) => state.getRole);
 	const setAppLoader = useAppStore().setAppLoading;
@@ -31,30 +24,6 @@ export const Users: React.FC = () => {
 	const [isEditing, setIsEditing] = useState(false);
 	const [form] = Form.useForm();
 
-	const courts = useQuery({
-		queryKey: ["court"],
-		queryFn: async () => {
-			try {
-				const court = await courtClient.getCourts();
-				console.log(court);
-				return court.map((ele) => ({
-					value: ele?.id,
-					label: ele?.name,
-				}));
-			} catch (error) {
-				if (error instanceof Error) {
-					message.error(error.message);
-					return;
-				}
-				if (typeof error === "string") {
-					message.error(error);
-					return;
-				}
-				message.error("Something went wrong");
-				return;
-			}
-		},
-	});
 
 	const userData = useQuery({
 		queryKey: ["userData"],
@@ -98,14 +67,12 @@ export const Users: React.FC = () => {
 
 	const deleteUser = useMutation({
 		mutationFn: async ({
-			courtId,
 			userId,
 		}: {
-			courtId: string;
 			userId: string;
 		}) => {
 			setAppLoader(true);
-			await userClient.delete(courtId, userId);
+			await userClient.delete(userId);
 			return;
 		},
 		onSuccess: () => {
@@ -120,13 +87,12 @@ export const Users: React.FC = () => {
 		},
 	});
 
-	const handleEditOrAddCourt = async () => {
+	const handleEdit = async () => {
 		try {
 			const values = await form.validateFields();
 
 			if (isEditing && selectedUser) {
 				await userClient.updateUser(
-					selectedUser.courtId.id,
 					selectedUser.id,
 					{
 						name: values.name,
@@ -134,7 +100,7 @@ export const Users: React.FC = () => {
 				);
 				message.success("User updated successfully!");
 			} else {
-				await userClient.createNew(values.courtId, values);
+				await userClient.createNewUser( values);
 				message.success("User added successfully!");
 			}
 			userData.refetch();
@@ -147,9 +113,7 @@ export const Users: React.FC = () => {
 	const handleEditUser = (user: User) => {
 		setSelectedUser(user);
 		form.setFieldsValue({
-			...user,
-			role: `${user.role}`,
-			courtId: user.courtId.id,
+			...user
 		});
 		setIsEditing(true);
 		setIsDrawerOpen(true);
@@ -159,28 +123,7 @@ export const Users: React.FC = () => {
 		{ title: "Name", dataIndex: "name", key: "name" },
 		{ title: "Email", dataIndex: "email", key: "email" },
 		{
-			title: "Phone",
-			key: "phone",
-			render: (_: unknown, record: User) =>
-				`${record.countryCode}-${record.phoneNumber}`,
-		},
-		{
-			title: "User Type",
-			dataIndex: "role",
-			key: "role",
-			render: (role: number) => getRole(role),
-		},
-		{
-			title: "Court",
-			dataIndex: "courtId",
-			key: "court",
-			render: (courtId: { name: string; id: string }) => (
-				<Link to={`/dashboard/court/${courtId?.id}`}>
-					{courtId?.name}
-				</Link>
-			),
-		},
-		{
+            title: "Actions",
 			key: "actions",
 			render: (record: User) => (
 				<Space>
@@ -189,7 +132,6 @@ export const Users: React.FC = () => {
 						title="Delete this user?"
 						onConfirm={() => {
 							deleteUser.mutate({
-								courtId: record.courtId.id,
 								userId: record.id,
 							});
 						}}
@@ -234,8 +176,7 @@ export const Users: React.FC = () => {
 				<Form
 					layout="vertical"
 					form={form}
-					onFinish={handleEditOrAddCourt}
-					initialValues={{ countryCode: "+91" }}
+					onFinish={handleEdit}
 				>
 					<Form.Item
 						label="Name"
@@ -262,88 +203,7 @@ export const Users: React.FC = () => {
 						<Input placeholder="Enter email" disabled={isEditing} />
 					</Form.Item>
 
-					<Form.Item label="Phone Number" required>
-						<Space.Compact>
-							<Form.Item
-								name="countryCode"
-								noStyle
-								rules={[
-									{
-										required: true,
-										message: "Country code is required",
-									},
-									{
-										pattern: /^\+\d{1,2}$/,
-										message: "Valid code (e.g., +91, +1)",
-									},
-								]}
-							>
-								<Input
-									maxLength={4}
-									style={{ width: 70, textAlign: "center" }}
-									disabled
-								/>
-							</Form.Item>
-							<Form.Item
-								name="phoneNumber"
-								noStyle
-								rules={[
-									{
-										required: true,
-										message: "Phone number required",
-									},
-									{
-										pattern: /^[0-9]{10}$/,
-										message: "Must be 10 digits",
-									},
-								]}
-							>
-								<Input
-									maxLength={10}
-									style={{ width: "285px" }}
-									placeholder="Phone number"
-									disabled={isEditing}
-								/>
-							</Form.Item>
-						</Space.Compact>
-					</Form.Item>
-
-					<Form.Item
-						label="User Type"
-						name="role"
-						rules={[
-							{
-								required: true,
-								message: "User type is required",
-							},
-						]}
-					>
-						<Select disabled={isEditing}>
-							<Select.Option value={roles.reader.toString()}>
-								Reader
-							</Select.Option>
-							<Select.Option value={roles.officer.toString()}>
-								Officer
-							</Select.Option>
-						</Select>
-					</Form.Item>
-					<Form.Item
-						label="Court"
-						name="courtId"
-						rules={[
-							{
-								required: true,
-								message: "Court is required",
-							},
-						]}
-					>
-						<Select
-							placeholder={"Select Court"}
-							disabled={isEditing}
-							options={courts.data}
-						/>
-					</Form.Item>
-
+					
 					<Button type="primary" block htmlType="submit">
 						{isEditing ? "Update User" : "Add User"}
 					</Button>
@@ -352,3 +212,5 @@ export const Users: React.FC = () => {
 		</MainAreaLayout>
 	);
 };
+
+export default Users;
